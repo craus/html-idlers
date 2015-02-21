@@ -20,7 +20,7 @@ function createSpace(params) {
       debugCounter = 0
       ui.clearDisplay()
       ui.context()
-      ui.fillDisplay(colors.brown)
+      ui.fillDisplay(colors.black)
       for (ui.layer = this.minLayer; ui.layer <= this.maxLayer; ui.layer++) {
         units.forEach(call('paint')) 
       }

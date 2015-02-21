@@ -3,8 +3,16 @@ function createCivilization(params) {
   var cities = 1
   var food = 0.0
   var minerals = 0.0
-  var happyPopulationLimit = 1
-  var mineralQuality = 1
+  var territory = 50
+  var army = 0
+  var money = 10
+  var farms = 0
+  var mines = 0
+  var roads = 0
+  var workers = 0
+  var time = 30
+  var enemiesStrength = 1
+  
   
   var happyPopulation
   var unhappyPopulation
@@ -14,6 +22,17 @@ function createCivilization(params) {
   var growthCost
   var dt
   var foodIncome
+  var mineralIncome
+  var moneyIncome
+  var farms
+  var mineralSources
+  var moneySources
+  var happiness
+  var danger
+  var lostCities
+  var lostArmy
+  var lostPopulation
+  var lostTerritory
   
   var buttons = []
   
@@ -21,6 +40,11 @@ function createCivilization(params) {
     population -= 2
     minerals -= 30
     cities += 1
+  }
+  
+  var buildSoldier = function() {
+    minerals -= 10
+    army += 1
   }
   
   civilization = createUnit($.extend({
@@ -36,30 +60,55 @@ function createCivilization(params) {
         lines += 1
       }
       var button = function(onclick) {
-        ui.rect(x0-sz,y0,sz,sz,colors.green)
-        buttons.push({l: x0-sz, t: y0, r: x0, b: y0+sz, onclick: onclick})
+        var d = sz * 0.1
+        ui.rect(x0-sz+d,y0+sz*lines+d,sz-2*d,sz-2*d,colors.green)
+        buttons.push({l: x0-sz+d, t: y0+sz*lines+d, r: x0-d, b: y0+sz+sz*lines-d, onclick: onclick})
+      }
+      var income = function(x) { 
+        var sign 
+        if (x < 0) sign = ""
+        else sign = "+"
+        return sign + x.toFixed(2)
       }
       buttons = []
       
-      print("Population: " + population)
-      if (population >= 3 && minerals >= 30) button(buildCity)
-      print("Cities: " + cities)
-      print("Food: " + Math.floor(food))
-      print("Minerals: " + Math.floor(minerals))
-      print("Working population: " + workingPopulation) 
-      print("Food income: " + foodIncome.toFixed(2))
+      print("Population: " + population + " (" + income(populationIncome) + " per second)")
+      print("Territory: " + Math.floor(territory))
+      if (population >= 2 && minerals >= 30 && cities < maxCities) button(buildCity)
+      print("Cities: " + cities + " (max. " + maxCities + ")")
+      if (minerals >= 10) button(buildSoldier)
+      print("Army: " + army)  
+      print("Minerals: " + Math.floor(minerals) + " (" + income(mineralIncome) + " per second)")
+      print("Money: " + Math.floor(money) + " (" + income(moneyIncome) + " per second)")
+      print("Working population: " + workingPopulation)
+      
+      x0 = ui.width() * 0.75
+      lines = 0
+      print("Next battle in: " + Math.ceil(time))
+      print("Enemy strength: " + enemiesStrength.toFixed(2))
+      if (danger != undefined) {
+        print("Result of last battle: " + (1-danger).toFixed(2))
+        print("Army lost: " + lostArmy)
+        print("Cities lost: " + lostCities)
+        print("Population lost: " + lostPopulation)
+        print("Territory lost: " + Math.floor(lostTerritory))
+      }
     },
     tick: function() {
+      
+      dt = space.tickTime
+      happiness = 1.0 + Math.min(2 * cities, army) / 2
       averageCityPopulation = population / cities
       growthPenalties = Math.floor(averageCityPopulation / 3)
       growthCost = 20 + 10 * growthPenalties
-      happyPopulation = Math.min(happyPopulationLimit, population)
+      happyPopulation = Math.min(happiness, population)
       unhappyPopulation = population - happyPopulation
-      workingPopulation = happyPopulation + unhappyPopulation / 2
-      dt = space.tickTime
+      workingPopulation = happyPopulation + unhappyPopulation * 0
+      maxCities = Math.floor(territory / 25)
+      
       foodIncome = cities * 2 + workingPopulation * 2 - population * 2
-    
       food += foodIncome * dt
+      populationIncome = foodIncome / growthCost
       if (food < 0) {
         food += 1
         population -= 1
@@ -69,7 +118,32 @@ function createCivilization(params) {
         population += 1
       }
       
-      minerals += mineralQuality * workingPopulation * dt
+      mineralIncome = cities * 1 + workingPopulation * 0.25
+      minerals += mineralIncome * dt
+      
+      moneyIncome = cities * 2 + workingPopulation * 0.5 - army
+      money += moneyIncome * dt
+      if (money < 0) {
+        money = 0
+        army -= 1
+      }
+      
+      territory += army * dt
+      
+      time -= dt
+      if (time < 0) {
+        time = 30
+        danger = 1.0 * enemiesStrength / (enemiesStrength+army)
+        lostArmy = Math.round(army * danger)
+        lostCities = Math.round(cities * danger)
+        lostPopulation = Math.round(population * danger)
+        lostTerritory = territory * danger
+        army -= lostArmy
+        cities -= lostCities
+        population -= lostPopulation
+        territory -= lostTerritory
+        enemiesStrength *= 1.1
+      }
     },
     click: function(x, y) {
       buttons.forEach(function(button) {

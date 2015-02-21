@@ -2,7 +2,7 @@
 
 window.onload = function() {
  
-  game = createCivilization()
+  game = createContestant()
   
   space = createSpace({speed: 5})
   
