@@ -16,6 +16,13 @@ function createContestant(params) {
   var contributionPerContest
   var linesPerContest
   
+  var getExperiencePerAlgorithm = function(algorithms) {
+    return Math.floor(Math.pow(1.1, algorithms))
+  }
+  var getCurrentExperiencePerAlgorithm = function() {
+    return getExperiencePerAlgorithm(algorithms)
+  }
+  
   var buttons = []
   
   var solveProblem = createClickerCommand({
@@ -29,21 +36,50 @@ function createContestant(params) {
     },
   })
   
-  var learnAlgorithm = function(cnt) {
-    algorithms += 1
-    experience -= experiencePerAlgorithm
-  }
+  var learnAlgorithm = createClickerCommand({
+    check: function(cnt) {
+      return experience >= this.requiredExperience(cnt)
+    },
+    requiredExperience: function(cnt) {
+      var result = 0
+      var virtualAlgorithms = algorithms
+      for(var i = 0; i<cnt; i++) {
+        result += getExperiencePerAlgorithm(virtualAlgorithms)
+        virtualAlgorithms += 1
+      }
+      return result
+    },
+    currentRequiredExperience: function() {
+      return this.requiredExperience(this.zoom)
+    },
+    run: function(cnt) {
+      for(var i = 0; i<cnt; i++) {
+        experience -= getCurrentExperiencePerAlgorithm()
+        algorithms += 1
+      }
+    }
+  })
   
-  var createContest = function(cnt) {
-    ideas -= ideasPerContest
-    contribution += contributionPerContest
-  }
+  var createContest = createClickerCommand({
+    check: function(cnt) {
+      return ideas >= ideasPerContest*cnt-eps
+    },
+    run: function(cnt) {
+      ideas -= ideasPerContest*cnt
+      contribution += contributionPerContest*cnt
+    },
+  })
   
-  var postHelp = function() {
-    contribution -= 1
-    experience += experiencePerProblem
-    ideas += ideasPerProblem
-  }
+  var postHelp = createClickerCommand({
+    check: function(cnt) {
+      return contribution >= cnt
+    },
+    run: function(cnt) {
+      contribution -= cnt
+      experience += experiencePerProblem*cnt
+      ideas += ideasPerProblem*cnt
+    },
+  })
   
   civilization = createUnit($.extend({
 
@@ -154,15 +190,30 @@ function createContestant(params) {
       print("Ideas of new problems: " + ideas.toFixed(2) + " (+" + ideasPerProblem + " per problem solved)")
       
       print("Algorithms: " + algorithms)
-      if (experience >= experiencePerAlgorithm) button(learnAlgorithm)
-      print("Learn new algorithm (costs " + experiencePerAlgorithm + " experience, +1 experience per problem solved)")
+      commandButton(learnAlgorithm)
+      print("Learn " + 
+        learnAlgorithm.zoom + 
+        " new algorithms (costs " + 
+        learnAlgorithm.currentRequiredExperience() + 
+        " experience, +" +
+        learnAlgorithm.zoom +
+        " experience per problem solved)")
       
       print("Contribution: " + contribution + " (+" + contributionPerContest + " per contest created)")
-      if (ideas >= ideasPerContest-eps) button(createContest)
-      print("Create contest (costs " + ideasPerContest + " ideas)")
+      commandButton(createContest)
+      print("Create " + 
+        createContest.zoom +
+        " contests (costs " + 
+        ideasPerContest*createContest.zoom + 
+        " ideas)")
       
-      if (contribution >= 1) button(postHelp)
-      print("Post \"PLEASE HELP ME SOLVE THIS PROBLEM\" (+1 problem solved, -1 contribution)")
+      commandButton(postHelp)
+      print(postHelp.zoom + 
+        " times post \"PLEASE HELP ME SOLVE THIS PROBLEM\" (+" +
+        postHelp.zoom +
+        " problem solved, -" +
+        postHelp.zoom +
+        " contribution)")
     },
     tick: function() {
       dt = space.tickTime
@@ -173,7 +224,7 @@ function createContestant(params) {
       ideasPerProblem = 0.1
       ideasPerContest = 5
       contributionPerContest = 10
-      experiencePerAlgorithm = Math.floor(Math.pow(1.1, algorithms))
+      experiencePerAlgorithm = getCurrentExperiencePerAlgorithm()
       
       codeLines += linesPerSecond * dt
     },
