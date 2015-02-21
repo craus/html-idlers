@@ -45,10 +45,11 @@ ui = {
   line: function(x1,y1,x2,y2,w,c) {
     var g = this.g
     c = rgba(c)
+    w = w || 1
     g.beginPath()
     g.moveTo(x1,y1)
     g.lineTo(x2,y2)
-    g.lineWidth = w
+    g.lineWidth = 1.0 * w / this.transforms.last()[0]
     g.strokeStyle = c
     g.stroke()
   },
@@ -85,6 +86,19 @@ ui = {
     this.g.fillRect(l,t,w,h,c)
   },
   
+  polygon: function(points, c) {
+    c = rgba(c)
+    var g = this.g
+    g.fillStyle = c || g.fillStyle
+    g.beginPath()
+    g.moveTo(points[0].x, points[0].y)
+    points.forEach(function(point) {
+      g.lineTo(point.x, point.y)
+    })
+    g.closePath()
+    g.fill()
+  },
+  
   canvas: function() { return document.getElementById('display') },
   
   context: function() { this.g = this.canvas().getContext('2d') },
@@ -101,6 +115,10 @@ ui = {
   },
   
   transform: function(x,y,z,ang) {
+    ang = ang || 0
+    z = z || 1
+    x = x || 0
+    y = y || 0
     var last = this.transforms[this.transforms.length-1]
     var next = transform(last,x,y,z,ang)
     this.transforms.push(next)
@@ -114,6 +132,8 @@ ui = {
   },
   
   move: function(x, y) {
+    x = x || 0
+    y = y || 0
     this.transform(x,y,1,0)
   },
   

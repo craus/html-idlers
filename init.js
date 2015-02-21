@@ -2,9 +2,10 @@
 
 window.onload = function() {
  
+  eps = 1e-2
   game = createContestant()
   
-  space = createSpace({speed: 5})
+  space = createSpace({speed: 50})
   
   bounds = createBounds($('#display-div')[0].offsetWidth, $('#display-div')[0].offsetHeight)
   var xc = (bounds.left + bounds.right)/2
