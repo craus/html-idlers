@@ -14,11 +14,10 @@ function createSpace(params) {
       debugCounter = 0
       ui.clearDisplay()
       ui.context()
-      ui.fillDisplay(colors.white)
+      ui.fillDisplay(colors.brown)
       for (ui.layer = this.minLayer; ui.layer <= this.maxLayer; ui.layer++) {
         units.forEach(call('paint')) 
       }
-      ui.gradient(colors.white)
     },
     tick: function() {
       this.frameCount++

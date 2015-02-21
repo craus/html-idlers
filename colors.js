@@ -15,6 +15,7 @@ colors = {
   cyan: [0,255,255,1],
   black: [0,0,0,1],
   white: [255,255,255,1],
+  brown: [150,50,0,1],
   
   mix: function(c, c2, k) {
     

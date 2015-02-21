@@ -7,7 +7,16 @@ window.onload = function() {
     speed: 0.3,
     inc: function(current, derivative) {
       return current + derivative * this.tickTime
-    }
+    },
+    paint: function() {
+      debugCounter = 0
+      ui.clearDisplay()
+      ui.context()
+      ui.fillDisplay(colors.brown)
+      for (ui.layer = this.minLayer; ui.layer <= this.maxLayer; ui.layer++) {
+        units.forEach(call('paint')) 
+      }
+    },
   })
   bounds = createBounds($('#display-div')[0].offsetWidth, $('#display-div')[0].offsetHeight)
   var xc = (bounds.left + bounds.right)/2
