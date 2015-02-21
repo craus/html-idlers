@@ -57,25 +57,25 @@ ui = {
   font: "Arial",
   
   setText: function(c, size, align, baseline, font) {
-    this.textSize = this.textSize || 42
-    this.font = this.font || "Arial"
+    this.textSize = size || this.textSize
+    this.font = font || this.font
     var g = this.g
     c = rgba(c)
-    g.textAlign = g.textAlign || align
-    g.textBaseline = g.textBaseline || baseline
+    g.textAlign = align || g.textAlign
+    g.textBaseline = baseline || g.textBaseline
     g.font = this.textSize + "px " + this.font
-    g.fillStyle = g.fillStyle || c
+    g.fillStyle = c || g.fillStyle
   },
   
   text: function(s, x, y, c, size, align, baseline, font) {
-    this.textSize = this.textSize || 42
-    this.font = this.font || "Arial"
+    this.textSize = size || this.textSize
+    this.font = font || this.font
     var g = this.g
     c = rgba(c)
-    g.textAlign = g.textAlign || align
-    g.textBaseline = g.textBaseline || baseline
+    g.textAlign = align || g.textAlign
+    g.textBaseline = baseline || g.textBaseline
     g.font = this.textSize + "px " + this.font
-    g.fillStyle = g.fillStyle || c
+    g.fillStyle = c || g.fillStyle
     g.fillText(s, x, y)
   },
   

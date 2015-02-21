@@ -1,6 +1,11 @@
 function createSpace(params) {
-  return $.extend({
-    tickTime: params.speed / params.ticksPerFrame,
+  var space = $.extend({
+    ticksPerSecond: 100,
+    speed: 1,
+    setIntervals: function() {
+      spaceTick = setInterval(this.tick.bind(this), 9)
+      spacePaint = setInterval(this.paint.bind(this), 9)
+    },
     frameCount: 0,
     tickCount: 0,
     time: 0,
@@ -11,6 +16,7 @@ function createSpace(params) {
       this.maxLayer = Math.max(this.maxLayer, layer)
     },
     paint: function() {
+      this.frameCount++
       debugCounter = 0
       ui.clearDisplay()
       ui.context()
@@ -20,14 +26,16 @@ function createSpace(params) {
       }
     },
     tick: function() {
-      this.frameCount++
-      for (var i = 0; i < this.ticksPerFrame; i++) {
+      for (var i = 0; i < this.ticksPerSecond / 100; i++) {
         this.tickCount++
         this.time += this.tickTime
         units.forEach(call('tick'))
       }
-      this.paint()
-
+    },
+    click: function(x, y) {
+      units.forEach(call('click', x, y))
     }
   }, params)
+  space.tickTime = space.speed / space.ticksPerSecond
+  return space
 }

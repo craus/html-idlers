@@ -1,6 +1,6 @@
 <head>
 	<link rel="stylesheet" type="text/css" href="style.css">
-	<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+	<script src="jquery.js"></script>
   
  	<script src="init.js"></script>
 	<script src="monkey_patches.js"></script>
@@ -18,9 +18,10 @@
   <script src="deque.js"></script>
   <script src="colors.js"></script>
   <script src="dev.js"></script>
+  <script src="civilization.js"></script>
 </head>
 
-<body onmousemove="watchCursor(event)">
+<body>
   <div class="labels">
     <div id="frameCount"></div>
     <div id="tickCount"></div>
@@ -30,6 +31,6 @@
   </div>
   <div id="circle" style="visibility: hidden"></div>
   <div id="display-div">
-    <canvas id="display" width=1024px, height=768px></canvas>
+    <canvas id="display" onmousemove="watchCursor(event)" width=1024px, height=768px></canvas>
   </div>
 </body>
