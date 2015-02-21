@@ -8,19 +8,14 @@ function createContestant(params) {
   var linesPerSecond = 1
   var ideas = 0
   
-  var experiencePerProblem
-  var linesPerProblem
-  var experiencePerAlgorithm
-  var ideasPerProblem
-  var ideasPerContest
-  var contributionPerContest
-  var linesPerContest
-  
-  var getExperiencePerAlgorithm = function(algorithms) {
+  var experiencePerProblem = function(){return 1+algorithms}
+  var linesPerProblem = 10
+  var linesPerContest = 50
+  var ideasPerProblem = 0.1
+  var ideasPerContest = 5
+  var contributionPerContest = 10
+  var experiencePerAlgorithm = function(algorithms) {
     return Math.floor(Math.pow(1.1, algorithms))
-  }
-  var getCurrentExperiencePerAlgorithm = function() {
-    return getExperiencePerAlgorithm(algorithms)
   }
   
   var buttons = []
@@ -31,7 +26,7 @@ function createContestant(params) {
     },
     run: function(cnt) {
       codeLines -= linesPerProblem * cnt
-      experience += experiencePerProblem * cnt
+      experience += experiencePerProblem() * cnt
       ideas += ideasPerProblem * cnt
     },
   })
@@ -44,7 +39,7 @@ function createContestant(params) {
       var result = 0
       var virtualAlgorithms = algorithms
       for(var i = 0; i<cnt; i++) {
-        result += getExperiencePerAlgorithm(virtualAlgorithms)
+        result += experiencePerAlgorithm(virtualAlgorithms)
         virtualAlgorithms += 1
       }
       return result
@@ -54,7 +49,7 @@ function createContestant(params) {
     },
     run: function(cnt) {
       for(var i = 0; i<cnt; i++) {
-        experience -= getCurrentExperiencePerAlgorithm()
+        experience -= experiencePerAlgorithm(algorithms)
         algorithms += 1
       }
     }
@@ -76,7 +71,7 @@ function createContestant(params) {
     },
     run: function(cnt) {
       contribution -= cnt
-      experience += experiencePerProblem*cnt
+      experience += experiencePerProblem()*cnt
       ideas += ideasPerProblem*cnt
     },
   })
@@ -180,7 +175,7 @@ function createContestant(params) {
       }
       buttons = []
       
-      print("Experience: " + experience + " (+" + experiencePerProblem + " per problem solved)")
+      print("Experience: " + experience + " (+" + experiencePerProblem() + " per problem solved)")
       
       commandButton(solveProblem)
       print("Solve " + solveProblem.zoom + " problems (costs " + linesPerProblem*solveProblem.zoom + " lines of code)")
@@ -218,14 +213,7 @@ function createContestant(params) {
     tick: function() {
       dt = space.tickTime
       
-      experiencePerProblem = 1 + algorithms
-      linesPerProblem = 10
-      linesPerContest = 50
-      ideasPerProblem = 0.1
-      ideasPerContest = 5
-      contributionPerContest = 10
-      experiencePerAlgorithm = getCurrentExperiencePerAlgorithm()
-      
+     
       codeLines += linesPerSecond * dt
     },
     click: function(x, y) {
