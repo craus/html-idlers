@@ -53,6 +53,32 @@ ui = {
     g.stroke()
   },
   
+  textSize: 42,
+  font: "Arial",
+  
+  setText: function(c, size, align, baseline, font) {
+    this.textSize = this.textSize || 42
+    this.font = this.font || "Arial"
+    var g = this.g
+    c = rgba(c)
+    g.textAlign = g.textAlign || align
+    g.textBaseline = g.textBaseline || baseline
+    g.font = this.textSize + "px " + this.font
+    g.fillStyle = g.fillStyle || c
+  },
+  
+  text: function(s, x, y, c, size, align, baseline, font) {
+    this.textSize = this.textSize || 42
+    this.font = this.font || "Arial"
+    var g = this.g
+    c = rgba(c)
+    g.textAlign = g.textAlign || align
+    g.textBaseline = g.textBaseline || baseline
+    g.font = this.textSize + "px " + this.font
+    g.fillStyle = g.fillStyle || c
+    g.fillText(s, x, y)
+  },
+  
   rect: function(l,t,w,h,c) {
     c = rgba(c)
     this.g.fillStyle = c

@@ -2,27 +2,43 @@
 
 window.onload = function() {
  
+  game = createUnit({
+    population: 1,
+    cities: 1,
+    food: 0,
+    paint: function() {
+      var x0 = ui.width()/4
+      var y0 = 10
+      var sz = 40
+      var g = ui.g
+    
+      g.textAlign = "start"
+      g.textBaseline = "top"
+      ui.color(colors.white)
+      
+    
+      ui.text("Population: " + this.population, x0, y0, colors.white, 40, "center", "top");
+      ui.text("Cities: " + this.cities, x0, 50);
+      ui.text("Food: " + this.food, x0, 90);
+    },
+    tick: function() {
+      this.population += 1
+    }
+  })
+  
+ 
   space = createSpace({
     ticksPerFrame: 1, 
     speed: 0.3,
     inc: function(current, derivative) {
       return current + derivative * this.tickTime
     },
-    paint: function() {
-      debugCounter = 0
-      ui.clearDisplay()
-      ui.context()
-      ui.fillDisplay(colors.brown)
-      for (ui.layer = this.minLayer; ui.layer <= this.maxLayer; ui.layer++) {
-        units.forEach(call('paint')) 
-      }
-    },
   })
   bounds = createBounds($('#display-div')[0].offsetWidth, $('#display-div')[0].offsetHeight)
   var xc = (bounds.left + bounds.right)/2
   var yc = (bounds.top + bounds.bottom)/2
  
-  units = []
+  units = [game]
   
   spaceTick = setInterval(space.tick.bind(space), 5)
   
