@@ -10,7 +10,7 @@ function createContestant(params) {
   var money = 0
   var totalIdeas = 0
   var problemsPerIdea = function(){
-    return Math.floor(Math.pow(1.1, ideas))
+    return Math.floor(Math.pow(1.1, totalIdeas))
   }
   var problemsLeftForIdea = problemsPerIdea()
   
@@ -34,6 +34,7 @@ function createContestant(params) {
     problemsLeftForIdea -= cnt
     while (problemsLeftForIdea <= 0) {
       ideas += 1
+      totalIdeas += 1
       problemsLeftForIdea += problemsPerIdea()
     }
   }
