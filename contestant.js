@@ -7,18 +7,36 @@ function createContestant(params) {
   var codeLines = 0
   var linesPerSecond = 1
   var ideas = 0
+  var money = 0
+  var totalIdeas = 0
+  var problemsPerIdea = function(){
+    return Math.floor(Math.pow(1.1, ideas))
+  }
+  var problemsLeftForIdea = problemsPerIdea()
+  
+  var contributionPercentagePerContest = function(){return 0.1}
   
   var experiencePerProblem = function(){return 1+algorithms}
   var linesPerProblem = 10
   var linesPerContest = 50
-  var ideasPerProblem = 0.1
   var ideasPerContest = 5
-  var contributionPerContest = 10
+  var contributionPerHelp = 10
+  var contributionPerAnswer = 1
+  var linesPerAnswer = 20
   var experiencePerAlgorithm = function(algorithms) {
     return Math.floor(Math.pow(1.1, algorithms))
   }
   
   var buttons = []
+  
+  var solvedSomeProblems = function(cnt) {
+    experience += experiencePerProblem() * cnt
+    problemsLeftForIdea -= cnt
+    while (problemsLeftForIdea <= 0) {
+      ideas += 1
+      problemsLeftForIdea += problemsPerIdea()
+    }
+  }
   
   var solveProblem = createClickerCommand({
     check: function(cnt) {
@@ -26,8 +44,7 @@ function createContestant(params) {
     },
     run: function(cnt) {
       codeLines -= linesPerProblem * cnt
-      experience += experiencePerProblem() * cnt
-      ideas += ideasPerProblem * cnt
+      solvedSomeProblems(cnt)
     },
   })
   
@@ -61,18 +78,30 @@ function createContestant(params) {
     },
     run: function(cnt) {
       ideas -= ideasPerContest*cnt
-      contribution += contributionPerContest*cnt
+      for (var i = 0; i < cnt; i++) {
+        contribution += Math.floor(contribution*contributionPercentagePerContest())
+      }
     },
   })
   
   var postHelp = createClickerCommand({
     check: function(cnt) {
-      return contribution >= cnt
+      return contribution >= contributionPerHelp*cnt
     },
     run: function(cnt) {
-      contribution -= cnt
-      experience += experiencePerProblem()*cnt
-      ideas += ideasPerProblem*cnt
+      contribution -= contributionPerHelp*cnt
+      solvedSomeProblems(cnt)
+    },
+  })
+  
+  var postAnswer = createClickerCommand({
+    check: function(cnt) {
+      return codeLines >= linesPerAnswer * cnt
+    },
+    run: function(cnt) {
+      contribution += contributionPerAnswer*cnt
+      codeLines -= linesPerAnswer * cnt
+      solvedSomeProblems(cnt)
     },
   })
   
@@ -182,7 +211,7 @@ function createContestant(params) {
       
       print("Lines of code: " + Math.floor(codeLines) + " (+" + linesPerSecond + " per second)")
       
-      print("Ideas of new problems: " + ideas.toFixed(2) + " (+" + ideasPerProblem + " per problem solved)")
+      print("Ideas of new problems: " + ideas.toFixed(2) + " (+1 after next " + problemsLeftForIdea + " problems solved)")
       
       print("Algorithms: " + algorithms)
       commandButton(learnAlgorithm)
@@ -194,21 +223,32 @@ function createContestant(params) {
         learnAlgorithm.zoom +
         " experience per problem solved)")
       
-      print("Contribution: " + contribution + " (+" + contributionPerContest + " per contest created)")
+      print("Contribution: " + contribution)
       commandButton(createContest)
       print("Create " + 
         createContest.zoom +
         " contests (costs " + 
         ideasPerContest*createContest.zoom + 
-        " ideas)")
+        " ideas; +" + 
+        Math.floor(contributionPercentagePerContest()*100) + 
+        "% contribution)")
       
       commandButton(postHelp)
       print(postHelp.zoom + 
         " times post \"PLEASE HELP ME SOLVE THIS PROBLEM\" (+" +
         postHelp.zoom +
         " problem solved, -" +
-        postHelp.zoom +
+        postHelp.zoom*contributionPerHelp +
         " contribution)")
+        
+      commandButton(postAnswer)
+      print(postAnswer.zoom + 
+        " times help somebody who post \"PLEASE HELP ME SOLVE THIS PROBLEM\"")
+      print("(costs " +
+        postHelp.zoom*linesPerAnswer +
+        " lines of code, +" +
+        postHelp.zoom*contributionPerAnswer +
+        " contribution)")        
     },
     tick: function() {
       dt = space.tickTime
