@@ -1,12 +1,14 @@
 function createContestant(params) {
   
-  var x0 = 160
-  var y0 = 10
+  // UI 
+ 
+  var x0
+  var y0
   var sz = 40
         
   var lines
-  var print = function(text) {
-    ui.text(text, x0, y0+sz*lines, colors.white, 40, "start", "top")
+  var print = function(text, align, baseline) {
+    ui.text(text, x0, y0+sz*lines, colors.white, sz, align || "start", baseline || "top")
     lines += 1
   }
   var button = function(onclick) {
@@ -95,242 +97,158 @@ function createContestant(params) {
     return sign + x.toFixed(2)
   }
   var large = function(x) {
-    return x > 1e4 || x < 1 ? x.toPrecision(4) : x.toFixed(2)
+    if (x > 1e4 || x < 1) return x.toPrecision(4) 
+    if (x - Math.floor(x) == 0) return x
+    return x.toFixed(2)
   }
   
+  // Rules common things
   
-  var experience = 0
-  var algorithms = 0
-  var rating = 1200
-  var contribution = 0
-  var codeLines = 0
-  var linesPerSecond = 10
-  var ideas = 0
-  var money = 0
-  var totalIdeas = 0
-  var problemCreation = 0
-  var experiencePerProblemCreation = function(problemCreation){
-    return 1 * Math.pow(4.0,problemCreation) / Math.pow(1.1, algorithms)
-  }
-  var ideasPerProblem = function(){
-    return Math.pow(2, problemCreation) / Math.pow(1.1, Math.floor(totalIdeas))
-  }
-  var experiencePerAlgorithm = function(algorithms) {
-    return 1 * Math.pow(1.1, algorithms)
+  var processes = []
+  
+  var v = function(initialValue, name) {
+    return {
+      value: initialValue, 
+      name: name,
+      get: function(){return this.value}
+    }
   }
   
-  var contributionPercentagePerContest = function(){return 0.5}
+  var c = function(calculator) {
+    return {
+      get: calculator
+    }
+  }
   
-  var experiencePerProblem = function(){return 1+algorithms}
-  var linesPerProblem = 10
-  var linesPerContest = 50
-  var ideasPerContest = 5
-  var contributionPerHelp = 2
-  var contributionPerAnswer = 1
-  var linesPerAnswer = 20
+  var k = function(x){return c(function(){return x})}
   
+  // rules
   
-  // "saved" game
-  totalIdeas = 252.81
-  ideas = 2.81
-  algorithms = 145
-  problemCreation = 22
-  contribution = 1.5e11
-  
-  totalIdeas = 320
-  ideas = 2.81
-  algorithms = 145
-  problemCreation = 22
-  contribution = 4e13
+  var codeLines = v(0, 'code lines')
+  var experience = v(0, 'experience')
+  var algorithms = v(0, 'algorithms')
+  var imagination = v(0, 'imagination')
+  var blindTyping = v(0, 'blind typing')
+  var ideas = v(0, 'ideas')
+  var totalIdeas = v(0, 'total ideas') 
+  var contribution = v(0, 'contribution')
+  var money = v(0, 'money')
+  var cormen = v(0, 'cormen level')
+  var keyboard = v(0, 'keyboard level')
+  var rating = v(0, 'rating')
 
+  var resources = [
+    codeLines, 
+    experience,
+    algorithms,
+    imagination,
+    blindTyping,
+    ideas, 
+    totalIdeas, 
+    contribution,
+    money, 
+    cormen,
+    keyboard, 
+    rating, 
+  ]
   
-  var buttons = []
+  var ideaGet = createEvent({
+    reward: [
+      [ideas, k(1)],
+      [totalIdeas, k(1)]
+    ]
+  })
+  var problemSolved = createEvent({
+    reward: [
+      [experience, c(function(){return 1+algorithms.get()})], 
+      [ideaGet, c(function(){return 1+imagination.get()})]
+    ]
+  })
   
-  var gainSomeIdeas = function(cnt) {
-    ideas += cnt
-    totalIdeas += cnt
-  }
-  
-  var solvedSomeProblems = function(cnt) {
-    experience += experiencePerProblem() * cnt
-    
-    while (cnt > 0) {
-      var nextIntTotalIdeas = 1 + Math.floor(totalIdeas)
-      var partOfIdea = nextIntTotalIdeas - totalIdeas
-      var problemForNextIdea = Math.ceil(partOfIdea / ideasPerProblem())
-      if (cnt >= problemForNextIdea) {
-        cnt -= problemForNextIdea
-        gainSomeIdeas(partOfIdea)
-      }
-      else {
-        gainSomeIdeas(cnt * ideasPerProblem())
-        cnt = 0
-      }
+  var events = [problemSolved]
+
+  var processes = [
+    derivative({
+      speed: c(function(){return 10+blindTyping.get()}),
+      value: codeLines
+    }),
+    derivative({
+      speed: contribution,
+      value: problemSolved
+    }),
+  ]
+
+  var buyEvents = [
+    {
+      name: 'Solve problem',
+      cost: [[codeLines, k(10)]],
+      reward: problemSolved
+    },
+    {
+      name: 'Learn algorithm',
+      cost: [[experience, c(function(){return 10 / (1+cormen.get())})]],
+      reward: [[algorithms, k(1)]]
+    },
+    {
+      name: 'Learn imagination',
+      cost: [[experience, k(10)]],
+      reward: [[imagination, k(1)]]
+    },
+    {
+      name: 'Learn blind typing',
+      cost: [[experience, c(function(){return 10 / (1+keyboard.get())})]],
+      reward: [[blindTyping, k(1)]]
+    },
+    {
+      name: 'Create contest',
+      cost: [[codeLines, k(500)], [ideas, k(5)]],
+      reward: [[money, k(1)], [contribution, c(function(){return 1+rating.get()})]]
+    },
+    {
+      name: 'Play contest',
+      cost: [[codeLines, k(50)]],
+      reward: [[rating, c(function(){return 1+algorithms.get()})]]
+    },
+    {
+      name: 'Upgrade Cormen',
+      cost: [[money, k(10)]],
+      reward: [[cormen, k(1)]]
+    },
+    {
+      name: 'Upgrade keyboard',
+      cost: [[money, k(10)]],
+      reward: [[keyboard, k(1)]]
     }
-  }
+  ].map(buyEvent)
   
-  var solveProblem = createClickerCommand({
-    check: function(cnt) {
-      return codeLines >= linesPerProblem * cnt
-    },
-    run: function(cnt) {
-      codeLines -= linesPerProblem * cnt
-      solvedSomeProblems(cnt)
-    },
-  })
-  
-  var learnAlgorithm = createClickerCommand({
-    check: function(cnt) {
-      return experience >= this.requiredExperience(cnt)
-    },
-    requiredExperience: function(cnt) {
-      var result = 0
-      var virtualAlgorithms = algorithms
-      for(var i = 0; i<cnt; i++) {
-        result += experiencePerAlgorithm(virtualAlgorithms)
-        virtualAlgorithms += 1
-      }
-      return result
-    },
-    currentRequiredExperience: function() {
-      return this.requiredExperience(this.zoom)
-    },
-    run: function(cnt) {
-      for(var i = 0; i<cnt; i++) {
-        experience -= experiencePerAlgorithm(algorithms)
-        algorithms += 1
-      }
-    }
-  })
-  
-  var learnProblemCreation = createClickerCommand({
-    check: function(cnt) {
-      return experience >= this.requiredExperience(cnt)
-    },
-    requiredExperience: function(cnt) {
-      var result = 0
-      var virtualProblemCreation = problemCreation
-      for(var i = 0; i<cnt; i++) {
-        result += experiencePerProblemCreation(virtualProblemCreation)
-        virtualProblemCreation += 1
-      }
-      return result
-    },
-    currentRequiredExperience: function() {
-      return this.requiredExperience(this.zoom)
-    },
-    run: function(cnt) {
-      for(var i = 0; i<cnt; i++) {
-        experience -= experiencePerProblemCreation(problemCreation)
-        problemCreation += 1
-      }
-    }
-  })
-  
-  var createContest = createClickerCommand({
-    check: function(cnt) {
-      return ideas >= ideasPerContest*cnt-eps
-    },
-    run: function(cnt) {
-      ideas -= ideasPerContest*cnt
-      for (var i = 0; i < cnt; i++) {
-        contribution += Math.floor(contribution*contributionPercentagePerContest())
-      }
-    },
-  })
-  
-  var postHelp = createClickerCommand({
-    check: function(cnt) {
-      return contribution >= contributionPerHelp*cnt
-    },
-    run: function(cnt) {
-      contribution -= contributionPerHelp*cnt
-      solvedSomeProblems(cnt)
-    },
-  })
-  
-  var postAnswer = createClickerCommand({
-    check: function(cnt) {
-      return codeLines >= linesPerAnswer * cnt
-    },
-    run: function(cnt) {
-      contribution += contributionPerAnswer*cnt
-      codeLines -= linesPerAnswer * cnt
-      solvedSomeProblems(cnt)
-    },
-  })
-  
-  civilization = createUnit($.extend({
+  contestant = createUnit($.extend({
 
     paint: function() {
 
       buttons = []
-      lines = 0 
+      x0 = 250
+      y0 = 10
+      lines = 0
+      resources.forEach(function(resource) {
+        print(large(resource.value), 'end')
+      })
+      x0 = 250
+      y0 = 10
+      lines = 0
+      resources.forEach(function(resource) {
+        print(" " + resource.name)
+      })
       
-      print("Experience: " + large(experience))
-      
-      commandButton(solveProblem)
-      print("Solve " + 
-        solveProblem.zoom + 
-        " problems (+" +
-        solveProblem.zoom*experiencePerProblem() + 
-        " experience)"
-        )
-      
-      print("Lines: " + Math.floor(codeLines))
-      
-      print("Ideas: " + ideas.toFixed(2) + " (+" + large(ideasPerProblem()) + " per problem solved)")
-      print("Total ideas: " + Math.floor(totalIdeas))
-      print("Algorithms: " + algorithms)
-      commandButton(learnAlgorithm)
-      print("Learn " + 
-        learnAlgorithm.zoom + 
-        " new algorithms (costs " + 
-        large(learnAlgorithm.currentRequiredExperience()) + 
-        " experience, +" +
-        learnAlgorithm.zoom +
-        " experience per problem solved)")
-        
-      print("Problem creation skill: " + problemCreation + " level")
-      commandButton(learnProblemCreation)
-      print("Upgrade " + 
-        learnProblemCreation.zoom + 
-        " levels (costs " + 
-        large(learnProblemCreation.currentRequiredExperience()) + 
-        " experience, each level doubles idea per problem rate)")        
-      
-      print("Contribution: " + contribution.toPrecision(4))
-      commandButton(createContest)
-      print("Create " + 
-        createContest.zoom +
-        " contests (costs " + 
-        ideasPerContest*createContest.zoom + 
-        " ideas; +" + 
-        Math.floor(contributionPercentagePerContest()*100) + 
-        "% contribution)")
-      
-      commandButton(postHelp)
-      print(large(postHelp.zoom) + 
-        " times post \"PLEASE HELP ME SOLVE THIS PROBLEM\" (+" +
-        large(postHelp.zoom) +
-        " problem solved, -" +
-        large(postHelp.zoom*contributionPerHelp) +
-        " contribution)")
-        
-      commandButton(postAnswer)
-      print(large(postAnswer.zoom) + 
-        " times help somebody who post \"PLEASE HELP ME SOLVE THIS PROBLEM\"")
-      print("(costs " +
-        large(postAnswer.zoom*linesPerAnswer) +
-        " lines of code, +" +
-        large(postAnswer.zoom*contributionPerAnswer) +
-        " contribution)")        
+      x0 = 700
+      y0 = 10
+      lines = 0
+      buyEvents.forEach(function(buyEvent) {
+        commandButton(buyEvent)
+        print(buyEvent.name + " x" + large(buyEvent.zoom))
+      })
     },
     tick: function() {
-      dt = space.tickTime
-      
-     
-      codeLines += linesPerSecond * dt
+      processes.forEach(call('tick'))
     },
     click: function(x, y) {
       buttons.forEach(function(button) {
@@ -338,5 +256,5 @@ function createContestant(params) {
       }) 
     }
   }, params))
-  return civilization
+  return contestant
 }
