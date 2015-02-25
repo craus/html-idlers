@@ -97,9 +97,10 @@ function createContestant(params) {
     return sign + x.toFixed(2)
   }
   var large = function(x) {
+    if (x == 0) return 0
     if (x > 1e4 || x < 1) return x.toPrecision(4) 
-    if (x - Math.floor(x) == 0) return x
-    return x.toFixed(2)
+    if (x - Math.floor(x) < eps) return Math.floor(x)
+    return x.toPrecision(4) 
   }
   
   // Rules common things
@@ -158,10 +159,28 @@ function createContestant(params) {
       [totalIdeas, k(1)]
     ]
   })
+  var ideasPerProblem = function() {return Math.pow(2, imagination.get()) / Math.pow(1.1, Math.floor(totalIdeas.get()))}
+  var problemSolvedGainsIdea = {
+    run: function(cnt) {
+      while (cnt > 0) {
+        var nextIntTotalIdeas = 1 + Math.floor(totalIdeas.get())
+        var partOfIdea = nextIntTotalIdeas - totalIdeas.get()
+        var problemForNextIdea = Math.ceil(partOfIdea / ideasPerProblem())
+        if (cnt >= problemForNextIdea) {
+          cnt -= problemForNextIdea
+          ideaGet.run(partOfIdea)
+        }
+        else {
+          ideaGet.run(cnt * ideasPerProblem())
+          cnt = 0
+        }
+      }
+    }
+  }
   var problemSolved = createEvent({
     reward: [
-      [experience, c(function(){return 1+algorithms.get()})], 
-      [ideaGet, c(function(){return 1+imagination.get()})]
+      [experience, c(function(){return Math.pow(1.1, algorithms.get())})], 
+      [problemSolvedGainsIdea, k(1)]
     ]
   })
   
@@ -169,7 +188,7 @@ function createContestant(params) {
 
   var processes = [
     derivative({
-      speed: c(function(){return 10+blindTyping.get()}),
+      speed: c(function(){return Math.pow(1.1, blindTyping.get())}),
       value: codeLines
     }),
     derivative({
@@ -183,21 +202,6 @@ function createContestant(params) {
       name: 'Solve problem',
       cost: [[codeLines, k(10)]],
       reward: problemSolved
-    },
-    {
-      name: 'Learn algorithm',
-      cost: [[experience, c(function(){return 10 / (1+cormen.get())})]],
-      reward: [[algorithms, k(1)]]
-    },
-    {
-      name: 'Learn imagination',
-      cost: [[experience, k(10)]],
-      reward: [[imagination, k(1)]]
-    },
-    {
-      name: 'Learn blind typing',
-      cost: [[experience, c(function(){return 10 / (1+keyboard.get())})]],
-      reward: [[blindTyping, k(1)]]
     },
     {
       name: 'Create contest',
@@ -219,7 +223,23 @@ function createContestant(params) {
       cost: [[money, k(10)]],
       reward: [[keyboard, k(1)]]
     }
-  ].map(buyEvent)
+  ].map(buyEvent).concat([
+    {
+      name: 'Learn algorithm',
+      cost: [[experience, c(function(){return Math.pow(1.1, algorithms.get()) / Math.pow(2, cormen.get())})]],
+      reward: [[algorithms, k(1)]]
+    },   
+    {
+      name: 'Learn imagination',
+      cost: [[experience, c(function(){return Math.pow(1.1, imagination.get())})]],
+      reward: [[imagination, k(1)]]
+    },
+    {
+      name: 'Learn blind typing',
+      cost: [[experience, c(function(){return Math.pow(1.1, blindTyping.get()) / Math.pow(2, keyboard.get())})]],
+      reward: [[blindTyping, k(1)]]
+    },
+  ].map(unlinearBuyEvent))
   
   contestant = createUnit($.extend({
 
@@ -244,7 +264,7 @@ function createContestant(params) {
       lines = 0
       buyEvents.forEach(function(buyEvent) {
         commandButton(buyEvent)
-        print(buyEvent.name + " x" + large(buyEvent.zoom))
+        print(buyEvent.name + " " + large(buyEvent.zoom) + " times")
       })
     },
     tick: function() {
