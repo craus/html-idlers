@@ -1,6 +1,3 @@
-Array.prototype.map = function(mappingFunction) {
-  return $.map(this, mappingFunction)
-}
 
 Array.prototype.last = function() {
   return this[this.length-1]

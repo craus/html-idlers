@@ -7,8 +7,8 @@ function createContestant(params) {
   var sz = 40
         
   var lines
-  var print = function(text, align, baseline) {
-    ui.text(text, x0, y0+sz*lines, colors.white, sz, align || "start", baseline || "top")
+  var print = function(text, align, baseline, font) {
+    ui.text(text, x0, y0+sz*lines, colors.white, font || sz, align || "start", baseline || "top")
     lines += 1
   }
   var button = function(onclick) {
@@ -90,16 +90,14 @@ function createContestant(params) {
     ui.untransform()
   }
   
-  var income = function(x) { 
-    var sign 
-    if (x < 0) sign = ""
-    else sign = "+"
-    return sign + x.toFixed(2)
+  var signPrefix = function(x) { 
+    if (x > 0) return "+";
+    return "";
   }
-  var large = function(x) {
+  large = function(x) {
     if (x == 0) return 0
-    if (x > 1e4 || x < 1) return x.toPrecision(4) 
-    if (x - Math.floor(x) < eps) return Math.floor(x)
+    if (Math.abs(x) > 1e4 || Math.abs(x) < 1) return x.toPrecision(4) 
+    if (Math.abs(x - Math.floor(x)) < eps) return Math.floor(x)
     return x.toPrecision(4) 
   }
   
@@ -160,7 +158,7 @@ function createContestant(params) {
     ]
   })
   var ideasPerProblem = function() {return Math.pow(2, imagination.get()) / Math.pow(1.1, Math.floor(totalIdeas.get()))}
-  var problemSolvedGainsIdea = {
+  problemSolvedGainsIdea = {
     run: function(cnt) {
       while (cnt > 0) {
         var nextIntTotalIdeas = 1 + Math.floor(totalIdeas.get())
@@ -175,7 +173,11 @@ function createContestant(params) {
           cnt = 0
         }
       }
-    }
+    }, 
+    reward: [
+      [ideas],
+      [totalIdeas]
+    ]
   }
   var problemSolved = createEvent({
     reward: [
@@ -265,6 +267,10 @@ function createContestant(params) {
       buyEvents.forEach(function(buyEvent) {
         commandButton(buyEvent)
         print(buyEvent.name + " " + large(buyEvent.zoom) + " times")
+        var delta = buyEvent.getDelta()
+        print(delta.map(function(resource) {
+          return signPrefix(resource.value) + large(resource.value) + " " + resource.name
+        }).join("; "), null, null, 20)
       })
     },
     tick: function() {

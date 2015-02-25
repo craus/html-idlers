@@ -21,6 +21,29 @@ function unlinearBuyEvent(params) {
       resource.value = resource.backup
     }
   }
+  getDelta = function(resource) {
+    if (resource.reward != undefined) {
+      var deltas = resource.reward.map(function(reward) {
+        var partial_delta = getDelta(reward[0])
+        return partial_delta
+      })
+      deltas = deltas.reduce(function(total, current) {
+        if (total.concat == undefined) {
+          console.log("bad total")
+          console.log(total)
+          stop()
+        }
+        return total.concat(current)
+      })
+      return deltas
+    } else {
+      var deltas = [{
+        name: resource.name,
+        value: resource.value-resource.backup
+      }]
+      return deltas
+    }
+  }
   
   
   return createClickerCommand($.extend({
@@ -63,6 +86,20 @@ function unlinearBuyEvent(params) {
         })    
         rewardEvent.run(1)
       }
-    },      
+    },  
+    getDelta: function() {
+      this.backup()
+      this.run(this.zoom) 
+      var delta = params.cost.map(function(cost) { 
+        var result = getDelta(cost[0])
+        return result
+      }).reduce(function(total, current) {
+        return total.concat(current)
+      })
+      var rewardDelta = getDelta(rewardEvent)
+      delta = delta.concat(rewardDelta)
+      this.restore()
+      return delta
+    }
   }, params))
 }

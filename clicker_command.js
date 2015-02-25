@@ -20,24 +20,20 @@ function createClickerCommand(params)
     zoomUp: function() {
       if (this.canZoomUp()) {
         this.zoom *= 10
-        console.log("adjusted up to " + this.zoom)
       }
     },
     zoomDown: function() {
       if (this.canZoomDown()) {
         this.zoom /= 10
-        console.log("adjusted down to " + this.zoom)
       }
     },
     adjust: function() {
       if (this.canZoomDown() && !this.canUse()) {
         this.zoom /= 10
-        console.log("adjusted down to " + this.zoom)
       }
       if (this.alwaysTop) {
         if (this.canZoomUp()) {
           this.zoom *= 10
-          console.log("adjusted up to " + this.zoom)
         }
       }
     },

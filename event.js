@@ -10,6 +10,6 @@ function createEvent(params) {
           resource.value += amount.get() * cnt
         }
       })
-    },    
+    }
   }, params)
 }
