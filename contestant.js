@@ -123,6 +123,47 @@ function createContestant(params) {
   
   // rules
   
+  // rules balance calculation
+  var A = Math.log(100)/100/Math.log(1.1)
+  var B = Math.log(1000)/1000/Math.log(1.2)
+  var Im = Math.log(10)/10/Math.log(1.01)
+  var Id = 1.0 / (Math.log(10))
+  var C0 = Math.log(1.01)
+  var C1 = Math.log(1.05)
+  var u = 1+Im+Im*A/(1-A)
+  var V = Id * u
+  var AB_route = B/(1-A)
+  balance = {
+    A: A,
+    B: B,
+    AB_route: AB_route,
+    Im: Im,
+    // u: u,
+    // v: V,
+    Id: Id, 
+    C0: C0,
+    C1: C1,
+    // C_even: AB_route / V,
+    // C_max: 1.0 / V,
+    C_route_0: C0*Id*u,
+    C_route_1: C1*Id*u,
+  }
+  console.log("Balance: ", balance)
+  
+  var digitFunction = function(base, resource)
+  {
+    return function() {
+      return Math.pow(base, Math.floor(resource.get()/base)) * ((resource.get())%base+1) 
+    }
+  }
+  // var testResource = v(0, 'test resource')
+  // var f = digitFunction(10, testResource)
+  // for (var i = 0; i < 100; i++) {
+    // testResource.value = i
+    // console.log("testResource.value: " + testResource.get())
+    // console.log("f: " + f())
+  // }
+  
   var codeLines = v(0, 'code lines')
   var experience = v(0, 'experience')
   var algorithms = v(0, 'algorithms')
@@ -131,7 +172,7 @@ function createContestant(params) {
   var ideas = v(0, 'ideas')
   var totalIdeas = v(0, 'total ideas') 
   var contribution = v(0, 'contribution')
-  var money = v(0, 'money')
+  var money = v(300, 'money')
   var cormen = v(0, 'cormen level')
   var keyboard = v(0, 'keyboard level')
   var rating = v(0, 'rating')
@@ -157,13 +198,13 @@ function createContestant(params) {
       [totalIdeas, k(1)]
     ]
   })
-  var ideasPerProblem = function() {return Math.pow(2, imagination.get()) / Math.pow(1.1, Math.floor(totalIdeas.get()))}
+  var ideasPerProblem = function() {return digitFunction(10,imagination)() / Math.pow(10, Math.floor(totalIdeas.get()))}
   problemSolvedGainsIdea = {
     run: function(cnt) {
       while (cnt > 0) {
         var nextIntTotalIdeas = 1 + Math.floor(totalIdeas.get())
         var partOfIdea = nextIntTotalIdeas - totalIdeas.get()
-        var problemForNextIdea = Math.ceil(partOfIdea / ideasPerProblem())
+        var problemForNextIdea = partOfIdea / ideasPerProblem()
         if (cnt >= problemForNextIdea) {
           cnt -= problemForNextIdea
           ideaGet.run(partOfIdea)
@@ -179,9 +220,10 @@ function createContestant(params) {
       [totalIdeas]
     ]
   }
+  
   var problemSolved = createEvent({
     reward: [
-      [experience, c(function(){return Math.pow(1.1, algorithms.get())})], 
+      [experience, c(digitFunction(100, algorithms))], 
       [problemSolvedGainsIdea, k(1)]
     ]
   })
@@ -190,13 +232,13 @@ function createContestant(params) {
 
   var processes = [
     derivative({
-      speed: c(function(){return Math.pow(1.1, blindTyping.get())}),
+      speed: c(digitFunction(1000, blindTyping)),
       value: codeLines
     }),
-    derivative({
-      speed: contribution,
-      value: problemSolved
-    }),
+    // derivative({
+      // speed: contribution,
+      // value: problemSolved
+    // }),
   ]
 
   var buyEvents = [
@@ -205,43 +247,54 @@ function createContestant(params) {
       cost: [[codeLines, k(10)]],
       reward: problemSolved
     },
+  ].map(buyEvent).concat([
+    {
+      name: 'Learn algorithm',
+      cost: [[experience, c(function(){return Math.pow(1.1, algorithms.get()-1) / Math.pow(2, cormen.get())})]],
+      reward: [[algorithms, k(1)]]
+    },   
+    {
+      name: 'Learn blind typing',
+      cost: [[experience, c(function(){return Math.pow(1.2, blindTyping.get()) / Math.pow(2, keyboard.get())})]],
+      reward: [[blindTyping, k(1)]]
+    },
+    {
+      name: 'Learn imagination',
+      cost: [[experience, c(function(){return Math.pow(1.01, imagination.get())})]],
+      reward: [[imagination, k(1)]]
+    },
     {
       name: 'Create contest',
       cost: [[codeLines, k(500)], [ideas, k(5)]],
-      reward: [[money, k(1)], [contribution, c(function(){return 1+rating.get()})]]
+      reward: [[money, k(1)], [contribution, c(function(){return contribution.get() * 0.01})]]
+    },  
+    {
+      name: 'Upgrade Cormen',
+      cost: [[money, c(function(){return Math.pow(1.12, cormen.get())})]],
+      reward: [[cormen, k(1)]]
     },
+    {
+      name: 'Upgrade keyboard',
+      cost: [[money, c(function(){return Math.pow(1.08, keyboard.get())})]],
+      reward: [[keyboard, k(1)]]
+    }    
+  ].map(unlinearBuyEvent)).concat([
     {
       name: 'Play contest',
       cost: [[codeLines, k(50)]],
       reward: [[rating, c(function(){return 1+algorithms.get()})]]
     },
     {
-      name: 'Upgrade Cormen',
-      cost: [[money, k(10)]],
-      reward: [[cormen, k(1)]]
+      name: 'Ask for help',
+      cost: [[contribution, k(2)]],
+      reward: [[problemSolved, k(1)]]
     },
     {
-      name: 'Upgrade keyboard',
-      cost: [[money, k(10)]],
-      reward: [[keyboard, k(1)]]
-    }
-  ].map(buyEvent).concat([
-    {
-      name: 'Learn algorithm',
-      cost: [[experience, c(function(){return Math.pow(1.1, algorithms.get()) / Math.pow(2, cormen.get())})]],
-      reward: [[algorithms, k(1)]]
-    },   
-    {
-      name: 'Learn imagination',
-      cost: [[experience, c(function(){return Math.pow(1.1, imagination.get())})]],
-      reward: [[imagination, k(1)]]
+      name: 'Help somebody',
+      cost: [[codeLines, k(10)]],
+      reward: [[contribution, k(1)]]
     },
-    {
-      name: 'Learn blind typing',
-      cost: [[experience, c(function(){return Math.pow(1.1, blindTyping.get()) / Math.pow(2, keyboard.get())})]],
-      reward: [[blindTyping, k(1)]]
-    },
-  ].map(unlinearBuyEvent))
+  ].map(buyEvent))
   
   contestant = createUnit($.extend({
 
@@ -261,7 +314,21 @@ function createContestant(params) {
         print(" " + resource.name)
       })
       
-      x0 = 700
+      x0 = 250
+      y0 = 600
+      lines = 0
+      processes.forEach(function(process) {
+        print(signPrefix(process.speed.get()) + large(process.speed.get()), 'end')
+      })
+      
+      x0 = 250
+      y0 = 600
+      lines = 0
+      processes.forEach(function(process) {
+        print(" " + process.value.name + " per second")
+      })
+      
+      x0 = 1000
       y0 = 10
       lines = 0
       buyEvents.forEach(function(buyEvent) {
