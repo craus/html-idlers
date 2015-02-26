@@ -82,7 +82,7 @@ function unlinearBuyEvent(params) {
         params.cost.forEach(function(cost) {
           var resource = cost[0]
           var amount = cost[1]
-          resource.value -= amount.get() * cnt
+          resource.value -= amount.get()
         })    
         rewardEvent.run(1)
       }
