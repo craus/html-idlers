@@ -170,6 +170,20 @@ function createAscender(params) {
 
   var linear = {}
   
+  var dropMoneyToHeritage = {
+    run: function() {
+      console.log("losing all money"); 
+      money.value = heritage.get()
+    },
+    backupSelf: function() {
+      money.backup = money.value
+    },
+    restoreSelf: function() {
+      money.value = money.backup
+    },
+    name: "money <- heritage"
+  }
+  
   var buyEvents = [
     buyEvent({
       name: "Ascend",
@@ -194,7 +208,7 @@ function createAscender(params) {
       reward: [
         [endurance, c(function(){return 1 + Math.log(money.get()) / Math.log(1e6)})],
         [income, c(function(){return -income.get() + 1})], 
-        [money, c(function(){return -money.get()+heritage.get()})],
+        [dropMoneyToHeritage, k(1)],
         [fatigue, c(function(){return -fatigue.get() + 1})]
       ],
       type: linear,
@@ -210,7 +224,7 @@ function createAscender(params) {
         [speed, c(function(){return 1 + Math.log(money.get()) / Math.log(1e3)})],
         [income, c(function(){return -income.get() + 1})], 
 //        [money, c(function(){return -money.get()+heritage.get()})],
-        [{run: function(){money.value = heritage.get()}}, k(1)],
+        [dropMoneyToHeritage, k(1)],
         [fatigue, c(function(){return -fatigue.get() + 1})]
       ],
       type: linear,
@@ -225,7 +239,7 @@ function createAscender(params) {
       reward: [
         [heritage, c(function(){return Math.pow(money.get(), 0.321)})],
         [income, c(function(){return -income.get() + 1})], 
-        [money, c(function(){return -money.get()+heritage.get()})],
+        [dropMoneyToHeritage, k(1)],
         [fatigue, c(function(){return -fatigue.get() + 1})]
       ],
       type: linear,
@@ -240,7 +254,7 @@ function createAscender(params) {
       reward: [
         [boost, c(function(){return Math.log(money.get()) / Math.log(1e4)})],
         [income, c(function(){return -income.get() + 1})], 
-        [money, c(function(){return -money.get()+heritage.get()})],
+        [dropMoneyToHeritage, k(1)],
         [fatigue, c(function(){return -fatigue.get() + 1})]
       ],
       type: linear,
@@ -252,7 +266,7 @@ function createAscender(params) {
       cost: [],
       reward: [
         [income, c(function(){return -income.get() + 1})], 
-        [money, c(function(){return -money.get()+heritage.get()})],
+        [dropMoneyToHeritage, k(1)],
         [fatigue, c(function(){return -fatigue.get() + 1})]
       ],
       type: linear,

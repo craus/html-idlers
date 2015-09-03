@@ -2,14 +2,18 @@ function unlinearBuyEvent(params) {
   var rewardEvent = (params.reward.run != undefined) ? params.reward : createEvent({reward: params.reward})
   
   var backup = function(resource) {
+    console.log("backup ", resource)
     if (resource.reward != undefined) {
       resource.reward.forEach(function(reward) {
         var resource = reward[0]
         backup(resource)
       })
-    } else {
+    } else if (resource.value != undefined) {
       resource.backup = resource.value
+    } else {
+      resource.backupSelf()
     }
+    console.log("end backup ", resource)
   }
   var restore = function(resource) {
     if (resource.reward != undefined) {
@@ -17,8 +21,10 @@ function unlinearBuyEvent(params) {
         var resource = reward[0]
         restore(resource)
       })
-    } else {
+    } else if (resource.value != undefined) {
       resource.value = resource.backup
+    } else {
+      resource.restoreSelf()
     }
   }
   getDelta = function(resource) {
@@ -36,12 +42,17 @@ function unlinearBuyEvent(params) {
         return total.concat(current)
       }, [])
       return deltas
-    } else {
+    } else if (resource.value != undefined) {
       var deltas = [{
         name: resource.name,
         value: resource.value-resource.backup
       }]
       return deltas
+    } else {
+      return [{
+        name: resource.name,
+        value: 1
+      }]
     }
   }
   
@@ -51,8 +62,10 @@ function unlinearBuyEvent(params) {
     backup: function() {
       params.cost.forEach(function(cost) {
         var resource = cost[0]
+        console.log("backup cost", this)
         backup(resource)
       })
+      console.log("backup reward", this)
       backup(rewardEvent)
     },
     restore: function() {
