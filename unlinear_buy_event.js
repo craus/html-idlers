@@ -34,7 +34,7 @@ function unlinearBuyEvent(params) {
           stop()
         }
         return total.concat(current)
-      })
+      }, [])
       return deltas
     } else {
       var deltas = [{
@@ -46,7 +46,8 @@ function unlinearBuyEvent(params) {
   }
   
   
-  return createClickerCommand($.extend({
+  var result = createClickerCommand($.extend({
+    show: function() { return true },
     backup: function() {
       params.cost.forEach(function(cost) {
         var resource = cost[0]
@@ -87,6 +88,8 @@ function unlinearBuyEvent(params) {
         rewardEvent.run(1)
       }
     },  
+    delta: 0,
+    onZoomChanged: function(){ this.delta = this.getDelta() },
     getDelta: function() {
       this.backup()
       this.run(this.zoom) 
@@ -95,11 +98,13 @@ function unlinearBuyEvent(params) {
         return result
       }).reduce(function(total, current) {
         return total.concat(current)
-      })
+      }, [])
       var rewardDelta = getDelta(rewardEvent)
       delta = delta.concat(rewardDelta)
       this.restore()
       return delta
     }
   }, params))
+  result.onZoomChanged()
+  return result
 }

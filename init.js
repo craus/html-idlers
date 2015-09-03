@@ -3,7 +3,7 @@
 window.onload = function() {
  
   eps = 1e-2
-  game = createContestant()
+  game = createAscender()
   
   space = createSpace({speed: 1})
   

@@ -2,6 +2,7 @@ function createClickerCommand(params)
 {
   var result = $.extend({
     zoom: 1,
+    onZoomChanged: function(){},
     alwaysTop: false,
     check: function(cnt){return false},
     run: function(cnt){},
@@ -20,14 +21,17 @@ function createClickerCommand(params)
     zoomUp: function() {
       if (this.canZoomUp()) {
         this.zoom *= 10
+        this.onZoomChanged()
       }
     },
     zoomDown: function() {
       if (this.canZoomDown()) {
         this.zoom /= 10
+        this.onZoomChanged()
       }
     },
     adjust: function() {
+      this.onZoomChanged()
       if (this.canZoomDown() && !this.canUse()) {
         this.zoom /= 10
       }
