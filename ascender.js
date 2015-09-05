@@ -286,15 +286,31 @@ function createAscender(params) {
         [fatigue, c(function(){return -fatigue.get() + 1})]
       ],
       type: linear,
-      alwaysTopButton: 'off'
+      alwaysTopButton: 'off',
+      upButton: 'off'
     }),   
     buyEvent({
-      name: "Advance Time",
+      name: "Advance Second",
       cost: [],
-      reward: [[time, k(1)], [secondTicked, k(1)]],
+      reward: [[secondTicked, k(1)]],
       type: linear,
       alwaysTopButton: 'off'
-    })        
+    }),     
+    buyEvent({
+      name: "Wipe Save",
+      cost: [],
+      reward: [[{
+        enabled: true,
+        backupSelf: function() { this.enabled = false },
+        run: function() {
+          if (this.enabled) wipeSave()
+        },
+        restoreSelf: function() { this.enabled = true }
+      }, k(1)]],
+      type: linear,
+      alwaysTopButton: 'off',
+      upButton: 'off'
+    })  
   ]
      
   ascender = createUnit($.extend({
@@ -334,7 +350,11 @@ function createAscender(params) {
       lines = 0
       buyEvents.forEach(function(buyEvent) {
         commandButton(buyEvent)
-        print(buyEvent.name + " " + large(buyEvent.zoom) + " times")
+        var eventDescription = buyEvent.name
+        if (buyEvent.upButton != 'off') {
+          eventDescription += " " + large(buyEvent.zoom) + " times"
+        }
+        print(eventDescription)
         var delta = buyEvent.delta
         print(delta.map(function(resource) {
           return signPrefix(resource.value) + large(resource.value) + " " + resource.name

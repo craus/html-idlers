@@ -9,7 +9,7 @@ function unlinearBuyEvent(params) {
       })
     } else if (resource.value != undefined) {
       resource.backup = resource.value
-    } else {
+    } else if (resource.backupSelf != undefined) {
       resource.backupSelf()
     }
   }
@@ -21,7 +21,7 @@ function unlinearBuyEvent(params) {
       })
     } else if (resource.value != undefined) {
       resource.value = resource.backup
-    } else {
+    } else if (resource.restoreSelf != undefined) {
       resource.restoreSelf()
     }
   }
