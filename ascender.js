@@ -105,7 +105,40 @@ function createAscender(params) {
   
   var processes = []
   
+  var savedata
+  if (localStorage.ascenderSaveData != undefined) {
+    savedata = JSON.parse(localStorage.ascenderSaveData)
+  } else {
+    savedata = {
+      realTime: new Date().getTime()
+    }
+  }
+  console.log("loaded ascender save: ", savedata)
+  
+  var saveWiped = false
+  
+  var save = function(timestamp) {
+    if (saveWiped) {
+      return
+    }
+    savedata = {}
+    resources.forEach(function(resource) {
+      savedata[resource.name] = resource.value
+    })
+    savedata.realTime = timestamp || new Date().getTime()
+    localStorage.ascenderSaveData = JSON.stringify(savedata)
+  } 
+  
+  wipeSave = function() {
+    saveWiped = true
+    localStorage.removeItem("ascenderSaveData")
+    location.reload()
+  }
+  
   var v = function(initialValue, name) {
+    if (savedata[name] != undefined) {
+      initialValue = savedata[name]
+    }
     return {
       value: initialValue, 
       name: name,
@@ -127,10 +160,10 @@ function createAscender(params) {
   var money = v(0, 'money')
   var income = v(1, 'income')
   var fatigue = v(1, 'fatigue')
-  var endurance = v(5, 'endurance')
-  var speed = v(9, 'speed')
-  var heritage = v(6e9, 'heritage')
-  var boost = v(5, 'boost')
+  var endurance = v(1, 'endurance')
+  var speed = v(1, 'speed')
+  var heritage = v(0, 'heritage')
+  var boost = v(0, 'boost')
   var incomeAdvance = v(0.001, 'incomeAdvance')  
   
   var resources = [
@@ -147,26 +180,10 @@ function createAscender(params) {
   var secondTicked = createEvent({
     reward: [
       [money, c(function(){return income.get() * speed.get()})],
-      [income, c(function(){return incomeAdvance.get() * speed.get()})]
+      [income, c(function(){return incomeAdvance.get() * speed.get()})],
+      [time, k(1)]
     ]
   })
-  
-  var ticker = derivative({
-    speed: k(1),
-    value: secondTicked
-  })
-  var timer = derivative({
-    speed: k(1),
-    value: time
-  })
-  var processes = [
-    ticker, 
-    timer
-  ]
-  
-  var ui_processes = [
-    ticker  
-  ]
 
   var linear = {}
   
@@ -298,19 +315,19 @@ function createAscender(params) {
         print(" " + resource.name)
       })
       
-      x0 = 250
-      y0 = 600
-      lines = 0
-      ui_processes.forEach(function(process) {
-        print(signPrefix(process.speed.get()) + large(process.speed.get()), 'end')
-      })
+      // x0 = 250
+      // y0 = 600
+      // lines = 0
+      // ui_processes.forEach(function(process) {
+        // print(signPrefix(process.speed.get()) + large(process.speed.get()), 'end')
+      // })
       
-      x0 = 250
-      y0 = 600
-      lines = 0
-      ui_processes.forEach(function(process) {
-        print(" " + process.value.name + " per second")
-      })
+      // x0 = 250
+      // y0 = 600
+      // lines = 0
+      // ui_processes.forEach(function(process) {
+        // print(" " + process.value.name + " per second")
+      // })
       
       x0 = 1000
       y0 = 10
@@ -325,7 +342,10 @@ function createAscender(params) {
       })
     },
     tick: function() {
-      processes.forEach(call('tick'))
+      var currentTime = new Date().getTime()
+      var deltaTime = currentTime - savedata.realTime
+      secondTicked.run(deltaTime / 1000)
+      save(currentTime)
     },
     click: function(x, y) {
       buttons.forEach(function(button) {
