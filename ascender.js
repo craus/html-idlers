@@ -172,7 +172,6 @@ function createAscender(params) {
   
   var dropMoneyToHeritage = {
     run: function() {
-      console.log("losing all money"); 
       money.value = heritage.get()
     },
     backupSelf: function() {

@@ -2,7 +2,6 @@ function unlinearBuyEvent(params) {
   var rewardEvent = (params.reward.run != undefined) ? params.reward : createEvent({reward: params.reward})
   
   var backup = function(resource) {
-    console.log("backup ", resource)
     if (resource.reward != undefined) {
       resource.reward.forEach(function(reward) {
         var resource = reward[0]
@@ -13,7 +12,6 @@ function unlinearBuyEvent(params) {
     } else {
       resource.backupSelf()
     }
-    console.log("end backup ", resource)
   }
   var restore = function(resource) {
     if (resource.reward != undefined) {
@@ -62,10 +60,8 @@ function unlinearBuyEvent(params) {
     backup: function() {
       params.cost.forEach(function(cost) {
         var resource = cost[0]
-        console.log("backup cost", this)
         backup(resource)
       })
-      console.log("backup reward", this)
       backup(rewardEvent)
     },
     restore: function() {
