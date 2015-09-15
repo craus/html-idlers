@@ -21,7 +21,7 @@ window.onload = function() {
       // Sorry! No Web Storage support..
   } 
  
-  eps = 1e-2
+  eps = 1e-8
   game = createAscender()
   
   space = createSpace({speed: 1})

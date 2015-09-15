@@ -1,4 +1,4 @@
-function createAscender(params) {
+function createClicker0002(params) {
   
   // UI 
  
@@ -8,7 +8,7 @@ function createAscender(params) {
         
   var lines
   var print = function(text, align, baseline, font) {
-    ui.text(text, x0, y0+sz*lines, colors.white, font || sz, align || "start", baseline || "top")
+    ui.text(text, x0, y0+sz*lines, colors.black, font || sz, align || "start", baseline || "top")
     lines += 1
   }
   var button = function(onclick) {
@@ -26,10 +26,11 @@ function createAscender(params) {
         {x: 0.5-d, y: 0.5-d}
       ])          
     }
+    var colorOn = [64, 64, 64, 64]
     ui.transform(x0-4*sz+sz/2,y0+sz*lines+sz/2,sz)
     if ((command.alwaysTopButton || 'on') == 'on') {
       ui.move(0,0)  
-      ui.color(command.alwaysTop ? colors.red : colors.green)
+      ui.color(command.alwaysTop ? colors.red : colorOn)
       arrow()
       ui.line(-0.5+d, -0.5+d, 0.5-d, -0.5+d,3)
       ui.untransform()
@@ -44,7 +45,7 @@ function createAscender(params) {
     
     if ((command.upButton || 'on') == 'on' && command.canZoomUp()) {
       ui.move(1,0)
-      ui.color(colors.green)
+      ui.color(colorOn)
       arrow()
       ui.untransform()
       buttons.push({
@@ -59,7 +60,7 @@ function createAscender(params) {
     if (command.canZoomDown() && !command.alwaysTop) {
       ui.move(2,0)
       ui.rotate(Math.PI)
-      ui.color(colors.green)
+      ui.color(colorOn)
       arrow()
       ui.untransform()
       ui.untransform()
@@ -75,7 +76,7 @@ function createAscender(params) {
     if (command.canUse()) {
       ui.move(3,0)
       ui.rotate(Math.PI/2)
-      ui.color(colors.green)
+      ui.color(colorOn)
       arrow()
       ui.untransform()
       ui.untransform()
@@ -103,17 +104,20 @@ function createAscender(params) {
   
   // Rules common things
   
+  var gameName = "clicker0002"
+  var saveName = gameName+"SaveData"
+  
   var processes = []
   
   var savedata
-  if (localStorage.ascenderSaveData != undefined) {
-    savedata = JSON.parse(localStorage.ascenderSaveData)
+  if (localStorage[saveName] != undefined) {
+    savedata = JSON.parse(localStorage[saveName])
   } else {
     savedata = {
       realTime: new Date().getTime()
     }
   }
-  console.log("loaded ascender save: ", savedata)
+  console.log("loaded " + gameName + " save: ", savedata)
   
   var saveWiped = false
   
@@ -126,12 +130,12 @@ function createAscender(params) {
       savedata[resource.name] = resource.value
     })
     savedata.realTime = timestamp || new Date().getTime()
-    localStorage.ascenderSaveData = JSON.stringify(savedata)
+    localStorage[saveName] = JSON.stringify(savedata)
   } 
   
   wipeSave = function() {
     saveWiped = true
-    localStorage.removeItem("ascenderSaveData")
+    localStorage.removeItem(saveName)
     location.reload()
   }
   
@@ -157,93 +161,64 @@ function createAscender(params) {
   // rules
    
   var time = v(0, 'time')
+  //var clicks = v(0, 'clicks')
+  
   var money = v(0, 'money')
-  var income = v(1, 'income')
-  var fatigue = v(1, 'fatigue')
-  var endurance = v(1, 'endurance')
-  var boost = v(0, 'boost')
-  var heritage = v(0, 'heritage')
-  var speed = v(1, 'speed')
+
+  var primes = [2,3,5,7,11,13,17,19,23,29,31,37,41,43]
+  
+  var serialResources = []
+  var serialEvents = []
+  
+  var serialCount = 10
+  
+  for (var i = 0; i < serialCount; i+=1) {
+    (function(i) {
+      serialResources.push(v(1, 'factor['+i+']'))
+    })(i)
+  }
+  
+  for (var i = 0; i < serialCount; i+=1) {
+    (function(i) {
+      serialEvents.push(buyEvent({
+        name: 'factor['+i+']',
+        cost: [
+          [money, c(function(){return Math.pow(10, i) * Math.pow(primes[i], serialResources[i].get())})]
+        ],
+        reward: [
+          [serialResources[i], k(1)],
+        ],
+        type: singular,
+        alwaysTopButton: 'off',
+        upButton: 'off'
+      }))
+    })(i)
+  }
   
   var resources = [
     time,
-    money,
-    income,
-    fatigue,
-    endurance,
-  ]
+    money
+  ].concat(serialResources)
+  
+  var moneyPerSecond = c(function() {
+    var total = 1
+    for (var i = 0; i < serialCount-1; i+=1) {
+      total *= serialResources[i].get()
+    }
+    return total
+  })
   
   var secondTicked = createEvent({
     reward: [
-      [money, c(function(){return income.get() * speed.get()})],
-      [time, k(1)]
+      [time, k(1)],
+      [money, moneyPerSecond]
     ]
   })
 
   var linear = {}
-  
-  var dropMoneyToHeritage = createSetter({
-    resource: money, 
-    value: heritage, 
-    name: "money <- heritage"
-  })
-  
-  var dropIncomeToOne = createSetter({
-    resource: income, 
-    value: k(1), 
-    name: "sets income to one"
-  })
-  
-  var buyEvents = [
-    buyEvent({
-      name: "Ascend",
-      cost: [
-        [income, income]
-      ],
-      reward: [
-        [income, c(function(){return money.get() / fatigue.get()})], 
-        [money, c(function(){return -money.get()})],
-        [fatigue, c(function(){return fatigue.get() / endurance.get()})],
-        [secondTicked, boost]
-      ],
-      type: linear,
-      alwaysTopButton: 'off',
-      upButton: 'off',
-      check: function(cnt) {
-        return money.get() / fatigue.get() > income.get()
-      }
-    }),
-    buyEvent({
-      name: "Endurance",
-      cost: [
-        [endurance, endurance]
-      ],
-      reward: [
-        [endurance, c(function(){return 1 + Math.log(money.get()) / Math.log(1e6)})],
-        [dropIncomeToOne,  k(1)], 
-        [dropMoneyToHeritage, k(1)],
-        [fatigue, c(function(){return -fatigue.get() + 1})]
-      ],
-      type: linear,
-      alwaysTopButton: 'off',
-      upButton: 'off',
-      check: function(cnt) {
-        return 1 + Math.log(money.get()) / Math.log(1e6) > endurance.get()
-      }
-    }),
-    buyEvent({
-      name: "Reset",
-      cost: [
-      ],
-      reward: [
-        [dropIncomeToOne,  k(1)], 
-        [dropMoneyToHeritage, k(1)],
-        [fatigue, c(function(){return -fatigue.get() + 1})]
-      ],
-      type: linear,
-      alwaysTopButton: 'off',
-      upButton: 'off',
-    }),    
+  var singular = {}
+    
+  var buyEvents = serialEvents.concat([
     buyEvent({
       name: "Advance Second",
       cost: [],
@@ -266,12 +241,12 @@ function createAscender(params) {
       alwaysTopButton: 'off',
       upButton: 'off'
     })  
-  ]
+  ])
      
-  ascender = createUnit($.extend({
+  result = createUnit($.extend({
 
     paint: function() {
-
+      ui.fillDisplay([224, 224, 224, 255])
       buttons = []
       x0 = 250
       y0 = 10
@@ -293,12 +268,10 @@ function createAscender(params) {
         // print(signPrefix(process.speed.get()) + large(process.speed.get()), 'end')
       // })
       
-      // x0 = 250
-      // y0 = 600
-      // lines = 0
-      // ui_processes.forEach(function(process) {
-        // print(" " + process.value.name + " per second")
-      // })
+      x0 = 250
+      y0 = 600
+      lines = 0
+      print("Income: " + large(moneyPerSecond.get()))
       
       x0 = 1000
       y0 = 10
@@ -328,5 +301,5 @@ function createAscender(params) {
       }) 
     }
   }, params))
-  return ascender
+  return result
 }

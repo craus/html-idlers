@@ -1,4 +1,4 @@
-function createAscender(params) {
+function createFighter(params) {
   
   // UI 
  
@@ -161,9 +161,10 @@ function createAscender(params) {
   var income = v(1, 'income')
   var fatigue = v(1, 'fatigue')
   var endurance = v(1, 'endurance')
-  var boost = v(0, 'boost')
-  var heritage = v(0, 'heritage')
   var speed = v(1, 'speed')
+  var heritage = v(0, 'heritage')
+  var boost = v(0, 'boost')
+  var incomeAdvance = v(0.001, 'incomeAdvance')  
   
   var resources = [
     time,
@@ -171,28 +172,33 @@ function createAscender(params) {
     income,
     fatigue,
     endurance,
+    speed,
+    heritage,
+    boost
   ]
   
   var secondTicked = createEvent({
     reward: [
       [money, c(function(){return income.get() * speed.get()})],
+      [income, c(function(){return incomeAdvance.get() * speed.get()})],
       [time, k(1)]
     ]
   })
 
   var linear = {}
   
-  var dropMoneyToHeritage = createSetter({
-    resource: money, 
-    value: heritage, 
+  var dropMoneyToHeritage = {
+    run: function() {
+      money.value = heritage.get()
+    },
+    backupSelf: function() {
+      money.backup = money.value
+    },
+    restoreSelf: function() {
+      money.value = money.backup
+    },
     name: "money <- heritage"
-  })
-  
-  var dropIncomeToOne = createSetter({
-    resource: income, 
-    value: k(1), 
-    name: "sets income to one"
-  })
+  }
   
   var buyEvents = [
     buyEvent({
@@ -208,10 +214,7 @@ function createAscender(params) {
       ],
       type: linear,
       alwaysTopButton: 'off',
-      upButton: 'off',
-      check: function(cnt) {
-        return money.get() / fatigue.get() > income.get()
-      }
+      upButton: 'off'
     }),
     buyEvent({
       name: "Endurance",
@@ -220,30 +223,72 @@ function createAscender(params) {
       ],
       reward: [
         [endurance, c(function(){return 1 + Math.log(money.get()) / Math.log(1e6)})],
-        [dropIncomeToOne,  k(1)], 
+        [income, c(function(){return -income.get() + 1})], 
         [dropMoneyToHeritage, k(1)],
         [fatigue, c(function(){return -fatigue.get() + 1})]
       ],
       type: linear,
       alwaysTopButton: 'off',
-      upButton: 'off',
-      check: function(cnt) {
-        return 1 + Math.log(money.get()) / Math.log(1e6) > endurance.get()
-      }
+      upButton: 'off'
     }),
     buyEvent({
-      name: "Reset",
+      name: "Speed",
       cost: [
+        [speed, speed]
       ],
       reward: [
-        [dropIncomeToOne,  k(1)], 
+        [speed, c(function(){return 1 + Math.log(money.get()) / Math.log(1e3)})],
+        [income, c(function(){return -income.get() + 1})], 
+//        [money, c(function(){return -money.get()+heritage.get()})],
         [dropMoneyToHeritage, k(1)],
         [fatigue, c(function(){return -fatigue.get() + 1})]
       ],
       type: linear,
       alwaysTopButton: 'off',
-      upButton: 'off',
-    }),    
+      upButton: 'off'
+    }),
+    buyEvent({
+      name: "Heritage",
+      cost: [
+        [heritage, heritage]
+      ],
+      reward: [
+        [heritage, c(function(){return Math.pow(money.get(), 0.321)})],
+        [income, c(function(){return -income.get() + 1})], 
+        [dropMoneyToHeritage, k(1)],
+        [fatigue, c(function(){return -fatigue.get() + 1})]
+      ],
+      type: linear,
+      alwaysTopButton: 'off',
+      upButton: 'off'
+    }),  
+    buyEvent({
+      name: "Boost",
+      cost: [
+        [boost, boost]
+      ],
+      reward: [
+        [boost, c(function(){return Math.log(money.get()) / Math.log(1e4)})],
+        [income, c(function(){return -income.get() + 1})], 
+        [dropMoneyToHeritage, k(1)],
+        [fatigue, c(function(){return -fatigue.get() + 1})]
+      ],
+      type: linear,
+      alwaysTopButton: 'off',
+      upButton: 'off'
+    }),
+    buyEvent({
+      name: "Refresh",
+      cost: [],
+      reward: [
+        [income, c(function(){return -income.get() + 1})], 
+        [dropMoneyToHeritage, k(1)],
+        [fatigue, c(function(){return -fatigue.get() + 1})]
+      ],
+      type: linear,
+      alwaysTopButton: 'off',
+      upButton: 'off'
+    }),   
     buyEvent({
       name: "Advance Second",
       cost: [],
