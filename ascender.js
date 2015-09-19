@@ -219,7 +219,7 @@ function createAscender(params) {
         [endurance, endurance]
       ],
       reward: [
-        [endurance, c(function(){return 1 + Math.log(money.get()) / Math.log(1e6)})],
+        [endurance, c(function(){return Math.log(money.get()) / Math.log(1e6)})],
         [dropIncomeToOne,  k(1)], 
         [dropMoneyToHeritage, k(1)],
         [fatigue, c(function(){return -fatigue.get() + 1})]
@@ -228,7 +228,7 @@ function createAscender(params) {
       alwaysTopButton: 'off',
       upButton: 'off',
       check: function(cnt) {
-        return 1 + Math.log(money.get()) / Math.log(1e6) > endurance.get()
+        return Math.log(money.get()) / Math.log(1e6) > endurance.get()
       }
     }),
     buyEvent({
